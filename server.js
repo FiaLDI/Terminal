@@ -11,6 +11,10 @@ const PORT = 3000;
 app.use(bodyParser.json());
 app.use(express.static('C://Users//Лео//Desktop//Терминал'));
 
+app.get('/', async (req, res) => {
+  res.redirect('/index.html')
+})
+
 // Конфигурация базы данных
 const dbConfig = {
   user: 'system', // Замените на имя пользователя Oracle XE
