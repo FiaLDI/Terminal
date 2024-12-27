@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Console</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #1e1e1e;
+            color: #1e1e1e;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1em;
+        }
+
+        .console {
+            background-color: #dfdfdf;
+            min-width: 800px;
+            padding: 20px;
+            overflow-y: auto;
+        
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .input-label {
+            color: #1e1e1e;
+        }
+
+        .query-input {
+            background-color: #dfdfdf;
+            color: #1e1e1e;
+            border: none;
+            padding: 5px;
+            flex: 1;
+            font-family: monospace;
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+        }
+
+        .console-output {
+            white-space: pre-wrap;
+            margin-top: 10px;
+        }
+
+        .button {
+            background-color: #1e1e1e;
+            color: #000;
+            border: none;
+            padding: 5px 10px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .button:hover {
+            background-color: #ffffff;
+        }
+
+        /* Стили для таблицы */
+        table {
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 5px;
+            text-align: center;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="console">
+            <div class="console-output" id="consoleOutput">SQL Console. Type your query below:</div>
+        </div>
+        <div class="input-wrapper">
+            <input type="text" class="query-input" id="queryInput" placeholder="Enter SQL query">
+            <button class="button" id="submitQuery">Run</button>
+        </div>
+    </div>
+    <script>
+        const queryInput = document.getElementById('queryInput');
+        const submitQuery = document.getElementById('submitQuery');
+        const consoleOutput = document.getElementById('consoleOutput');
+
+        // Обработчик кнопки "Run"
+        submitQuery.addEventListener('click', async () => {
+            await executeQuery();
+        });
+
+        // Обработчик нажатия клавиши Enter
+        queryInput.addEventListener('keydown', async (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();  // Предотвращаем стандартное поведение Enter
+                await executeQuery();
+            }
+        });
+
+        // Функция выполнения запроса
+        async function executeQuery() {
+            const query = queryInput.value;
+
+            if (!query.trim()) {
+                appendToConsole('Error: Please enter a SQL query.');
+                return;
+            }
+
+            appendToConsole(`SQL > ${query}`);
+
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    appendToConsole(`Error: ${data.error}`);
+                    return;
+                }
+
+                if (data.result.length === 0) {
+                    appendToConsole('No results found.');
+                } else {
+                    const output = formatResults(data.result, data.metaData);
+                    appendToConsole(output);
+                }
+            } catch (error) {
+                appendToConsole(`Error: ${error.message}`);
+            }
+
+            queryInput.value = '';
+        }
+
+        // Добавить сообщение в консоль
+        function appendToConsole(message) {
+            consoleOutput.innerHTML += `<pre>${message}</pre>`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        // Форматировать результаты в таблицу
+        function formatResults(rows, metaData) {
+            let output = '<table>';
+
+            // Заголовки
+            output += '<thead><tr>';
+            metaData.forEach(col => {
+                output += `<th>${col.name}</th>`;
+            });
+            output += '</tr></thead>';
+
+            // Строки
+            output += '<tbody>';
+            rows.forEach(row => {
+                output += '<tr>';
+                row.forEach(value => {
+                    output += `<td>${value === null ? 'NULL' : value}</td>`;
+                });
+                output += '</tr>';
+            });
+            output += '</tbody>';
+            output += '</table>';
+
+            return output;
+        }
+    </script>
+</body>
+</html>
