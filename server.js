@@ -1,15 +1,17 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const oracledb = require('oracledb');
+const path = require('path');
+require('dotenv').config();
 
-oracledb.initOracleClient({ libDir: 'D:\instantclient_23_6' });
+oracledb.initOracleClient({ libDir: process.env.DB_LIBDIR });
 
 const app = express();
 const PORT = 3000;
 
 // Middleware для обработки JSON
 app.use(bodyParser.json());
-app.use(express.static('C://Users//Лео//Desktop//Терминал'));
+app.use(express.static(`${__dirname}`));
 
 app.get('/', async (req, res) => {
   res.redirect('/index.html')
@@ -17,8 +19,8 @@ app.get('/', async (req, res) => {
 
 // Конфигурация базы данных
 const dbConfig = {
-  user: 'system', // Замените на имя пользователя Oracle XE
-  password: 'admin', // Замените на пароль
+  user: process.env.DB_USER, // Замените на имя пользователя Oracle XE
+  password: process.env.DB_PASSWORD, // Замените на пароль
   connectString: 'localhost/XE' // Подключение к Oracle XE
 };
 
